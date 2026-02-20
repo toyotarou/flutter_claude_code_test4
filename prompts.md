@@ -90,3 +90,58 @@ App2（受信）
 - **Deep Linkのテストは同一デバイスへの両アプリインストールが前提**
 - **Androidはバックスタックで自動的に呼び出し元に戻るが、iOSは自動復帰しない**
 - **ホットリロードはAPKを更新しないため、アプリ再起動後は古いコードで動く**
+
+---
+
+## OSによるスキーム解決の仕組み
+
+`↓ OSがスキームを解決` という部分の詳細。
+
+### スキームはいつ・何を登録するのか？
+
+「アプリの名前」ではなく、**そのアプリが処理できるスキームの文字列**を、**インストール時**にOSに登録する。
+
+### 登録方法
+
+**Android（AndroidManifest.xml）**
+
+```xml
+<intent-filter>
+    <action android:name="android.intent.action.VIEW" />
+    <data android:scheme="app2" />  <!-- ← "app2://" をこのアプリが処理する -->
+</intent-filter>
+```
+
+**iOS（Info.plist）**
+
+```xml
+<key>CFBundleURLSchemes</key>
+<array>
+    <string>app2</string>  <!-- ← "app2://" をこのアプリが処理する -->
+</array>
+```
+
+### 全体の流れ
+
+```
+① アプリをインストール
+      ↓
+② OSがManifest / Info.plistを読み込み
+      ↓
+③ 「app2:// → このアプリ」をOS内部のテーブルに登録
+      ↓
+④ 誰かが app2://... を開こうとする（url_launcherなど）
+      ↓
+⑤ OSがテーブルを検索 → 対応アプリを起動
+```
+
+### スキームが競合したら？
+
+同じスキームを複数のアプリが登録した場合：
+
+| OS | 挙動 |
+|---|---|
+| Android | 選択ダイアログが表示される |
+| iOS | 先にインストールしたアプリが優先（後から入れたアプリは無視される） |
+
+→ これがカスタムスキームの欠点。本番アプリでは `https://` ベースの **App Links（Android）/ Universal Links（iOS）** が推奨される。
