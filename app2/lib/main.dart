@@ -32,13 +32,14 @@ class DateListPage extends StatefulWidget {
 }
 
 class _DateListPageState extends State<DateListPage> {
-  final _appLinks = AppLinks();
+  final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSub;
   bool _launchedFromDeepLink = false;
 
   List<String> get februaryDates {
-    return List.generate(28, (i) {
-      final day = i + 1;
+    // ignore: always_specify_types
+    return List.generate(28, (int i) {
+      final int day = i + 1;
       return '2026-02-${day.toString().padLeft(2, '0')}';
     });
   }
@@ -51,7 +52,7 @@ class _DateListPageState extends State<DateListPage> {
 
   Future<void> _initDeepLink() async {
     // アプリが終了状態からDeep Linkで起動された場合
-    final initialUri = await _appLinks.getInitialLink();
+    final Uri? initialUri = await _appLinks.getInitialLink();
     if (initialUri != null) {
       // Widgetのビルドが完了してからダイアログを表示する
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -61,15 +62,17 @@ class _DateListPageState extends State<DateListPage> {
 
     // アプリが起動中にDeep Linkを受信した場合
     // getInitialLink() と同じURIがStreamにも流れてきた場合は二重処理を防ぐ
-    _linkSub = _appLinks.uriLinkStream.listen((uri) {
-      if (uri.toString() == initialUri?.toString()) return;
+    _linkSub = _appLinks.uriLinkStream.listen((Uri uri) {
+      if (uri.toString() == initialUri?.toString()) {
+        return;
+      }
       _handleUri(uri);
     });
   }
 
   /// app2://date/{date} からパスの最初のセグメントを取り出す
   void _handleUri(Uri uri) {
-    final segments = uri.pathSegments;
+    final List<String> segments = uri.pathSegments;
     if (segments.isNotEmpty) {
       setState(() {
         _launchedFromDeepLink = true;
@@ -80,6 +83,7 @@ class _DateListPageState extends State<DateListPage> {
 
   /// 日付ダイアログを表示する（通常タップ・Deep Link共通）
   void _showDateDialog(String date) {
+    // ignore: inference_failure_on_function_invocation
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -91,7 +95,7 @@ class _DateListPageState extends State<DateListPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
+        actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('閉じる'),
@@ -109,12 +113,12 @@ class _DateListPageState extends State<DateListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final dates = februaryDates;
+    final List<String> dates = februaryDates;
     return Scaffold(
       appBar: AppBar(
         title: const Text('App2 - 2026年2月'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
+        actions: <Widget>[
           if (_launchedFromDeepLink)
             IconButton(
               icon: const Icon(Icons.close),
@@ -126,8 +130,8 @@ class _DateListPageState extends State<DateListPage> {
       body: ListView.separated(
         itemCount: dates.length,
         separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final date = dates[index];
+        itemBuilder: (BuildContext context, int index) {
+          final String date = dates[index];
           return ListTile(
             title: Text(date),
             onTap: () => _showDateDialog(date),
