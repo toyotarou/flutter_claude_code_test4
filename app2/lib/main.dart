@@ -15,10 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'App2',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.green), useMaterial3: true),
       home: const DateListPage(),
     );
   }
@@ -51,13 +48,11 @@ class _DateListPageState extends State<DateListPage> {
 
   /// 2026年全日付（1/1〜12/31）を生成する
   List<String> _buildAllDates() {
-    final List<String> dates = [];
-    DateTime date = DateTime(2026, 1, 1);
+    final List<String> dates = <String>[];
+    DateTime date = DateTime(2026);
     final DateTime end = DateTime(2026, 12, 31);
     while (!date.isAfter(end)) {
-      dates.add(
-        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
-      );
+      dates.add('${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}');
       date = date.add(const Duration(days: 1));
     }
     return dates;
@@ -104,15 +99,16 @@ class _DateListPageState extends State<DateListPage> {
   /// 本日の日付までスクロールする（個別起動時）
   void _scrollToToday() {
     final DateTime now = DateTime.now();
-    final String today =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final String today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     _scrollToDate(today);
   }
 
   /// 指定した日付の位置までリストをスクロールする
   void _scrollToDate(String date) {
     final int index = _dates.indexOf(date);
-    if (index < 0) return;
+    if (index < 0) {
+      return;
+    }
     _scrollController.animateTo(
       index * _itemExtent,
       duration: const Duration(milliseconds: 400),
@@ -127,19 +123,8 @@ class _DateListPageState extends State<DateListPage> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('選択された日付'),
-        content: Text(
-          date,
-          style: const TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('閉じる'),
-          ),
-        ],
+        content: Text(date, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+        actions: <Widget>[TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('閉じる'))],
       ),
     );
   }
@@ -159,11 +144,7 @@ class _DateListPageState extends State<DateListPage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: <Widget>[
           if (_launchedFromDeepLink)
-            IconButton(
-              icon: const Icon(Icons.close),
-              tooltip: 'App1に戻る',
-              onPressed: () => SystemNavigator.pop(),
-            ),
+            IconButton(icon: const Icon(Icons.close), tooltip: 'App1に戻る', onPressed: () => SystemNavigator.pop()),
         ],
       ),
       body: ListView.builder(
@@ -174,14 +155,9 @@ class _DateListPageState extends State<DateListPage> {
           final String date = _dates[index];
           return DecoratedBox(
             decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Color(0x1F000000)),
-              ),
+              border: Border(bottom: BorderSide(color: Color(0x1F000000))),
             ),
-            child: ListTile(
-              title: Text(date),
-              onTap: () => _showDateDialog(date),
-            ),
+            child: ListTile(title: Text(date), onTap: () => _showDateDialog(date)),
           );
         },
       ),
