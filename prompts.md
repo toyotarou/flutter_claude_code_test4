@@ -119,6 +119,21 @@ App2（受信）
 
 **対応内容:** ## 8（二重表示バグ）と ## 9（本項目）を追記。以降はプロンプトへの対応ごとに自動で記録する。
 
+## 10. App2のリストを2026年全日付に拡張・Deep Linkでスクロール
+
+**プロンプト:**
+> app2を2026年全てのリスト（2026-01-01 -> 2026-12-31）にしてください。
+> app1からは「2026-02-01」のように引数が渡されるので、app2のリストをその位置までスクロールするようにしてください。
+
+**対応内容:** `februaryDates` を廃止し `_buildAllDates()` に置き換え（`DateTime` で1/1〜12/31を生成）。スクロール用に `ScrollController` を追加。`ListView.separated` → `ListView.builder`（`itemExtent: 57.0`）に変更し、インデックス×固定高さでオフセットを正確に計算。`_scrollToDate()` を新設し `_handleUri()` 内でダイアログ表示前に呼び出す。コールドスタート時も `addPostFrameCallback` でスクロールが正常動作。
+
+## 11. App2個別起動時に本日の日付へ自動スクロール
+
+**プロンプト:**
+> app2を個別起動した時にも本日までスクロールするようにしてください。
+
+**対応内容:** `_initDeepLink()` で `getInitialLink()` が `null`（Deep Linkなし）だった場合、`addPostFrameCallback` で `_scrollToToday()` を呼ぶよう修正。`_scrollToToday()` は `DateTime.now()` から今日の日付文字列を生成し `_scrollToDate()` に渡す。Deep Link起動時は従来通り引数の日付へスクロール。
+
 ---
 
 ## OSによるスキーム解決の仕組み

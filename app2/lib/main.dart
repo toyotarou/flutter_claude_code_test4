@@ -33,30 +33,48 @@ class DateListPage extends StatefulWidget {
 
 class _DateListPageState extends State<DateListPage> {
   final AppLinks _appLinks = AppLinks();
+  final ScrollController _scrollController = ScrollController();
   StreamSubscription<Uri>? _linkSub;
   bool _launchedFromDeepLink = false;
 
-  List<String> get februaryDates {
-    // ignore: always_specify_types
-    return List.generate(28, (int i) {
-      final int day = i + 1;
-      return '2026-02-${day.toString().padLeft(2, '0')}';
-    });
-  }
+  // itemExtent を固定することでインデックスからオフセットを正確に計算できる
+  static const double _itemExtent = 57.0; // ListTile(56) + Divider(1)
+
+  late final List<String> _dates;
 
   @override
   void initState() {
     super.initState();
+    _dates = _buildAllDates();
     _initDeepLink();
+  }
+
+  /// 2026年全日付（1/1〜12/31）を生成する
+  List<String> _buildAllDates() {
+    final List<String> dates = [];
+    DateTime date = DateTime(2026, 1, 1);
+    final DateTime end = DateTime(2026, 12, 31);
+    while (!date.isAfter(end)) {
+      dates.add(
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+      );
+      date = date.add(const Duration(days: 1));
+    }
+    return dates;
   }
 
   Future<void> _initDeepLink() async {
     // アプリが終了状態からDeep Linkで起動された場合
     final Uri? initialUri = await _appLinks.getInitialLink();
     if (initialUri != null) {
-      // Widgetのビルドが完了してからダイアログを表示する
+      // Widgetのビルドが完了してからスクロール・ダイアログを表示する
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _handleUri(initialUri);
+      });
+    } else {
+      // 個別起動時は本日の日付までスクロール
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToToday();
       });
     }
 
@@ -77,8 +95,29 @@ class _DateListPageState extends State<DateListPage> {
       setState(() {
         _launchedFromDeepLink = true;
       });
-      _showDateDialog(segments.first);
+      final String date = segments.first;
+      _scrollToDate(date);
+      _showDateDialog(date);
     }
+  }
+
+  /// 本日の日付までスクロールする（個別起動時）
+  void _scrollToToday() {
+    final DateTime now = DateTime.now();
+    final String today =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    _scrollToDate(today);
+  }
+
+  /// 指定した日付の位置までリストをスクロールする
+  void _scrollToDate(String date) {
+    final int index = _dates.indexOf(date);
+    if (index < 0) return;
+    _scrollController.animateTo(
+      index * _itemExtent,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
   }
 
   /// 日付ダイアログを表示する（通常タップ・Deep Link共通）
@@ -108,15 +147,15 @@ class _DateListPageState extends State<DateListPage> {
   @override
   void dispose() {
     _linkSub?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<String> dates = februaryDates;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('App2 - 2026年2月'),
+        title: const Text('App2 - 2026年'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: <Widget>[
           if (_launchedFromDeepLink)
@@ -127,14 +166,22 @@ class _DateListPageState extends State<DateListPage> {
             ),
         ],
       ),
-      body: ListView.separated(
-        itemCount: dates.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
+      body: ListView.builder(
+        controller: _scrollController,
+        itemCount: _dates.length,
+        itemExtent: _itemExtent,
         itemBuilder: (BuildContext context, int index) {
-          final String date = dates[index];
-          return ListTile(
-            title: Text(date),
-            onTap: () => _showDateDialog(date),
+          final String date = _dates[index];
+          return DecoratedBox(
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: Color(0x1F000000)),
+              ),
+            ),
+            child: ListTile(
+              title: Text(date),
+              onTap: () => _showDateDialog(date),
+            ),
           );
         },
       ),
